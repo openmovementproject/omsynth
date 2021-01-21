@@ -1,0 +1,4 @@
+/bin/*.exe
+/bin/*.csv
+/bin/*.cwa
+/src/omsynth/.vscode

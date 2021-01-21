@@ -1,0 +1,10 @@
+/Debug
+/Release
+/*.db
+/.vs
+/*.sdf
+/*.user
+/*.suo
+/*.opendb
+/x64
+/omsynth
