@@ -200,9 +200,38 @@ int CwaWriterOpen(cwa_writer_t *writer, const char *filename, const cwa_writer_s
   writer->lastRateCode = ConfigCode(writer->settings.rate, writer->settings.range);
 
   // TODO: When support gyro, choose hardware type, sensor config and scale mask
-  writer->hardwareType = 0x00;      // 0x00=AX3, 0x64=AX6
-  writer->sensorConfig = 0xff;      // 0xff = accel-only
-  writer->lastScaleMask = 0;        // 0xAAAGGG0000000000, 0x00 for AX3
+  if (settings->gyro < 0)
+  {
+      // AX3
+      writer->hardwareType = 0x00;      // 0x00=AX3
+      writer->sensorConfig = 0xff;      // 0xff = accel-only (AX3)
+      writer->lastScaleMask = 0;        // 0x00 for AX3
+  }
+  else
+  {
+      writer->hardwareType = 0x64;      // 0x64=AX6
+
+      // TODO: Determine sensor config
+      int gyroCode = 0; // 0x00 = accel-only (AX6)
+      if (settings->gyro > 0)
+      {
+          // Map to nearest range: 8000/2^n dps
+          if (settings->gyro <= 187) gyroCode = 6;          // 125 dps
+          else if (settings->gyro <= 375) gyroCode = 5;     // 250 dps
+          else if (settings->gyro <= 750) gyroCode = 4;     // 500 dps
+          else if (settings->gyro <= 1500) gyroCode = 3;    // 1000 dps
+          else gyroCode = 2;                                // 2000 dps
+      }
+      writer->sensorConfig = 0x00 | (gyroCode & 0x07);
+
+      // Determine accelerometer scale: 1/2^(8+n)
+      int accelCode = 0;
+      if (writer->settings.range < 3) accelCode = 6;        // +/- 2g = 1/16384
+      else if (writer->settings.range < 6) accelCode = 5;   // +/- 4g = 1/8192
+      else if (writer->settings.range < 12) accelCode = 4;  // +/- 8g = 1/4096
+      else accelCode = 3;                                   // +/- 16g = 1/2048
+      writer->lastScaleMask = ((accelCode & 0x07) << 13) | ((gyroCode & 0x07) << 10);        // 0xAAAGGG0000000000
+  }
 
   if (!CwaWriterWriteHeader(writer)) { return -2; }
   return 0;
@@ -212,13 +241,11 @@ static bool CwaWriterWriteBlock(cwa_writer_t * writer)
 {
   if (writer->sampleCount > 0)
   {
-    // TODO: Support 6 channels
-    unsigned char numAxesBPS = writer->settings.packed ? 0x30 : 0x32;
+    int channels = (writer->settings.gyro >= 0) ? 6 : 3;
+    unsigned char numAxesBPS = (channels == 3 && writer->settings.packed) ? 0x30 : ((channels << 4) | 0x02);
     unsigned short deviceFractional;
     unsigned int timestamp;
     short timestampOffset;
-
-    int channels = numAxesBPS >> 4;
 
     double elapsedTime = writer->lastTime - writer->firstSampleTime;
     // Calculate sample rate, re-use last if only a single sample has been written in the sector
@@ -293,32 +320,48 @@ static bool CwaWriterWriteBlock(cwa_writer_t * writer)
     // @26  +2   timestampOffset: Relative sample index from the start of the buffer where the whole-second timestamp is valid
     buffer[26] = (unsigned char)timestampOffset; buffer[27] = (unsigned char)(timestampOffset >> 8);
 
-    // @28  +2   sampleCount: Number of accelerometer samples (80 or 120 if this sector is full)
+    // @28  +2   sampleCount: Number of accelerometer samples (accelerometer-only: 80 or 120 if this sector is full; accel+gyro: 40)
     buffer[28] = (unsigned char)writer->sampleCount; buffer[29] = (unsigned char)(writer->sampleCount >> 8);
 
     // @30  +480 rawSampleData: Raw sample data.  Each sample is either 6x 16-bit signed values (gx, gy, gz, ax, ay, az); 3x 16-bit signed values (x, y, z); or one 32-bit packed value (The bits in bytes [3][2][1][0]: eezzzzzz zzzzyyyy yyyyyyxx xxxxxxxx, e = binary exponent, lsb on right)
+    int accelAxis = -1, gyroAxis = -1, magAxis = -1;
+    if (channels >= 3) { accelAxis = 0; }
+    if (channels >= 6) { accelAxis = 3; gyroAxis = 0; }
+    if (channels >= 9) { accelAxis = 3; gyroAxis = 0; magAxis = 6;  }
     for (int i = 0; i < writer->sampleCount; i++)
     {
       cwa_writer_sample_t *sample = &writer->samples[i];
-      short intSample[6];
+      short intSample[9];
 
-      // TODO: Support different accelerometer scales and gyro-scale
-      int scale = 256;
-
-      // TODO: Support 6-axis, put gyro data first
-      intSample[0] = (int)(sample->x * scale);
-      intSample[1] = (int)(sample->y * scale);
-      intSample[2] = (int)(sample->z * scale);
-
-      // Clamp to the configured g-range
-      int clamp = 256 * OM_ACCEL_RANGE_FROM_CONFIG(writer->lastRateCode);
-      for (int j = 0; j < channels; j++)
+      // Gyro values and clamp to the configured range
+      if (channels >= 6)
       {
-        if (intSample[j] < -clamp) { intSample[j] = -clamp; }
-        if (intSample[j] > clamp - 1) { intSample[j] = clamp - 1; }
+          int gyroRange = 1 << (8 + ((writer->lastScaleMask >> 10) & 0x07)); // Gyro range (8000/2^n dps)
+          int gyroClamp = 32768;    // 2^15
+          intSample[gyroAxis + 0] = (int)(sample->gx * gyroClamp / gyroRange);
+          intSample[gyroAxis + 1] = (int)(sample->gy * gyroClamp / gyroRange);
+          intSample[gyroAxis + 2] = (int)(sample->gz * gyroClamp / gyroRange);
+          for (int j = 0; j < 3; j++)
+          {
+              if (intSample[gyroAxis + j] < -gyroClamp) { intSample[gyroAxis + j] = -gyroClamp; }
+              if (intSample[gyroAxis + j] > gyroClamp - 1) { intSample[gyroAxis + j] = gyroClamp - 1; }
+          }
       }
 
-      if (writer->settings.packed)
+      // Accel values and clamp to the configured g-range
+      int accelScale = 1 << (8 + ((writer->lastScaleMask >> 13) & 0x07));
+      intSample[accelAxis + 0] = (int)(sample->ax * accelScale);
+      intSample[accelAxis + 1] = (int)(sample->ay * accelScale);
+      intSample[accelAxis + 2] = (int)(sample->az * accelScale);
+      int accelClamp = accelScale * OM_ACCEL_RANGE_FROM_CONFIG(writer->lastRateCode);
+      for (int j = 0; j < 3; j++)
+      {
+        if (intSample[accelAxis + j] < -accelClamp) { intSample[accelAxis + j] = -accelClamp; }
+        if (intSample[accelAxis + j] > accelClamp - 1) { intSample[accelAxis + j] = accelClamp - 1; }
+      }
+
+
+      if (channels == 3 && writer->settings.packed)
       {
         unsigned char *p = buffer + 30 + (i * 4);
         AccelPackData(intSample, p, writer->lastRateCode);
@@ -372,7 +415,8 @@ bool CwaWriterWriteSample(cwa_writer_t *writer, const cwa_writer_sample_t *sampl
   }
   writer->sampleCount++;
 
-  int maxSamples = writer->settings.packed ? 120 : 80;
+  int channels = (writer->settings.gyro >= 0) ? 6 : 3;
+  int maxSamples = (channels == 3 && writer->settings.packed) ? 120 : (480 / 2 / channels);
   if (writer->sampleCount >= maxSamples)
   {
     // Flush current block because it is full

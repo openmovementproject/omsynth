@@ -33,10 +33,12 @@ typedef struct
 { 
 	const char *filename;
 	const char *outFilename;
-	double scale;					// Input value scaling (e.g. 1/256 = raw units)
-	int range;						// 2/4/8/16
+	double scale;					// Input value scaling for accelerometer values (e.g. 1/256 = raw units)
+	int rate;						// Configured rate (100 Hz)
+	int range;						// Accelerometer range: 2/4/8/16 g
 	bool packed;					// Packed/unpacked mode
 	bool silent;					// No progress output
+	int gyro;						// Gyro range: -1=AX3 (default); 0=AX6 accel-only mode; 125/250/500/1000/2000 degrees/second
 } omsynth_settings_t;
 
 int OmSynthRun(omsynth_settings_t *settings);

@@ -41,6 +41,9 @@ typedef struct
 	int colAX;
 	int colAY;
 	int colAZ;
+	int colGX;
+	int colGY;
+	int colGZ;
 } import_csv_t;
 
 int ImportCsvOpen(import_csv_t *importer, const char *filename, double scale);

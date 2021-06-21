@@ -76,9 +76,10 @@ int OmSynthRun(omsynth_settings_t *settings)
 	cwaSettings.sessionId = 0;
 	cwaSettings.loggingStartTime = 0;  				// 0 = always start
 	cwaSettings.loggingEndTime = 0xffffffff;  // 0xffffffff = never end
-	cwaSettings.rate = 100;
+	cwaSettings.rate = settings->rate;
 	cwaSettings.range = settings->range;
 	cwaSettings.packed = settings->packed;
+	cwaSettings.gyro = settings->gyro;
 
 	cwa_writer_t cwaWriter;
 	if (!settings->silent)
@@ -102,7 +103,7 @@ int OmSynthRun(omsynth_settings_t *settings)
 	}
 
 	// All values in the input
-	double values[4];
+	double values[1 + 3 + 3 + 3] = { 0 };
 	for (unsigned int line = 0; ; line++)
 	{
 		int samples = ImportCsvNextSample(&importer, values);

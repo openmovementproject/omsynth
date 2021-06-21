@@ -54,7 +54,10 @@ int ImportCsvOpen(import_csv_t *importer, const char *filename, double scale)
 	importer->colAX = -1;
 	importer->colAY = -1;
 	importer->colAZ = -1;
-	
+	importer->colGX = -1;
+	importer->colGY = -1;
+	importer->colGZ = -1;
+
 	//fprintf(stderr, "Processing data: %s\n", filename);
 	int headerCells = CsvOpen(&importer->csv, filename, CSV_HEADER_DETECT_NON_NUMERIC, CSV_SEPARATORS);
 	if (headerCells == 0)
@@ -64,6 +67,9 @@ int ImportCsvOpen(import_csv_t *importer, const char *filename, double scale)
 		importer->colAX = 1;
 		importer->colAY = 2;
 		importer->colAZ = 3;
+		importer->colGX = 4;
+		importer->colGY = 5;
+		importer->colGZ = 6;
 	}
 	else
 	{
@@ -77,6 +83,9 @@ int ImportCsvOpen(import_csv_t *importer, const char *filename, double scale)
 			else if (!_strcasecmp(heading, "Accel-X (g)")) { importer->colAX = i; }
 			else if (!_strcasecmp(heading, "Accel-Y (g)")) { importer->colAY = i; }
 			else if (!_strcasecmp(heading, "Accel-Z (g)")) { importer->colAZ = i; }
+			else if (!_strcasecmp(heading, "Gyro-X (d/s)")) { importer->colGX = i; }
+			else if (!_strcasecmp(heading, "Gyro-Y (d/s)")) { importer->colGY = i; }
+			else if (!_strcasecmp(heading, "Gyro-Z (d/s)")) { importer->colGZ = i; }
 			else
 			{
 				fprintf(stderr, "WARNING: Unknown data column %d heading: '%s'.\n", i + 1, heading);
@@ -104,6 +113,20 @@ int ImportCsvNextSample(import_csv_t *importer, double *txyz)
 			txyz[1] = CsvTokenFloat(&importer->csv, importer->colAX) * importer->scale;
 			txyz[2] = CsvTokenFloat(&importer->csv, importer->colAY) * importer->scale;
 			txyz[3] = CsvTokenFloat(&importer->csv, importer->colAZ) * importer->scale;	
+
+			if (tokens > importer->colGX && tokens > importer->colGY && tokens > importer->colGZ)
+			{
+				txyz[4] = CsvTokenFloat(&importer->csv, importer->colGX);
+				txyz[5] = CsvTokenFloat(&importer->csv, importer->colGY);
+				txyz[6] = CsvTokenFloat(&importer->csv, importer->colGZ);
+				return 1 + 3 + 3;	// time + 6-axis data
+			}
+			else
+			{
+				txyz[4] = 0;
+				txyz[5] = 0;
+				txyz[6] = 0;
+			}
 			return 1 + 3;	// time + 3-axis data
 		}
 		else if (tokens > 0)	// Ignore completely blank lines

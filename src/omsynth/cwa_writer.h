@@ -35,19 +35,20 @@
 
 typedef struct
 {
-  unsigned int deviceId;          // 0 is default
-  unsigned int sessionId;         // 0 is default
-  unsigned int loggingStartTime;  // 0 = always start
-  unsigned int loggingEndTime;    // 0xffffffff = never end
-  unsigned int rate;              // configured sample rate (default 100)
-  unsigned char range;            // 2/4/8/16 (default 8)
-  bool packed;                    // default true
+  unsigned int deviceId;            // 0 is default
+  unsigned int sessionId;           // 0 is default
+  unsigned int loggingStartTime;    // 0 = always start
+  unsigned int loggingEndTime;      // 0xffffffff = never end
+  unsigned int rate;                // configured sample rate (default 100)
+  unsigned char range;              // 2/4/8/16 (default 8)
+  int gyro;							// Gyro range: -1=AX3 (default); 0=AX6 accel-only mode; 125/250/500/1000/2000 degrees/second
+  bool packed;                      // default false
 } cwa_writer_settings_t;
 
 #define CWA_MAX_SAMPLES 120
 typedef struct
 {
-  double t, x, y, z;
+  double t, ax, ay, az, gx, gy, gz;
 } cwa_writer_sample_t;
 
 

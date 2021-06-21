@@ -73,8 +73,10 @@ int main(int argc, char *argv[])
 	// Default settings
 	memset(&settings, 0, sizeof(settings));
 	settings.packed = false;
+	settings.rate = 100;
 	settings.range = 8;
 	settings.scale = 1.0f;				// Use "1/256" if input is in raw units
+	settings.gyro = -1;
 
 	for (i = 1; i < argc; i++)
 	{
@@ -84,8 +86,16 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[i], "-packed") == 0) { settings.packed = true; }
 		else if (strcmp(argv[i], "-unpacked") == 0) { settings.packed = false; }
 		else if (strcmp(argv[i], "-silent") == 0) { settings.silent = true; }
-		else if (strcmp(argv[i], "-range") == 0) { settings.range = false; }
+		else if (strcmp(argv[i], "-rate") == 0) { settings.rate = atoi(argv[++i]); }
+		else if (strcmp(argv[i], "-range") == 0) { settings.range = atoi(argv[++i]); }
 		else if (strcmp(argv[i], "-scale") == 0) { settings.scale = scale(argv[++i]); }
+		else if (strcmp(argv[i], "-gyro") == 0)
+		{
+			i++;
+			if (strcmp(argv[i], "none") == 0) { settings.gyro = -1; }
+			else if (strcmp(argv[i], "off") == 0) { settings.gyro = 0; }
+			else settings.gyro = atoi(argv[i]);
+		}
 		else if (argv[i][0] == '-')
 		{
 			fprintf(stderr, "Unknown option: %s\n", argv[i]);
@@ -115,19 +125,21 @@ int main(int argc, char *argv[])
 	if (help)
 	{
 		fprintf(stderr, "omsynth OM File Synthesizer Tool\n");
-		fprintf(stderr, "V1.00\n");
+		fprintf(stderr, "V1.10\n");
 		fprintf(stderr, "\n");
-		fprintf(stderr, "Usage: omsynth [[-in] <input.csv>] [-out <output.synth.cwa>] [-range 2|4|8|16] [-packed|-unpacked] [-scale <scale>]\n");
+		fprintf(stderr, "Usage: omsynth [options...]\n");
 		fprintf(stderr, "\n");
-		fprintf(stderr, "Options:\n");
+		fprintf(stderr, "options:\n");
 		fprintf(stderr, "\n");
-		fprintf(stderr, "\t[-in] <input.csv>        Input file (defaults to stdin)\n");
-		fprintf(stderr, "\t-out <output.synth.cwa>  Output file (defaults to stdout)\n");
+		fprintf(stderr, "\t[-in] <input.csv>						Input file (defaults to stdin)\n");
+		fprintf(stderr, "\t-out <output.synth.cwa>					Output file (defaults to stdout)\n");
 		fprintf(stderr, "\n");
-		fprintf(stderr, "\t-packed                  Use 'packed' storage mode\n");
-		fprintf(stderr, "\t-unpacked                Use 'unpacked' storage mode (default)\n");
-		fprintf(stderr, "\t-scale <scale>           Input scaling: default: 1; for raw units: 1/256.\n");
-		fprintf(stderr, "\t-range 2|4|8|16          Range in +/-g, default 8\n");
+		fprintf(stderr, "\t-unpacked|packed							Use 'unpacked' storage mode (default), or 'packed' storage mode (accel. only)\n");
+		fprintf(stderr, "\t-scale <scale>							Accelerometer input scaling (default=1; e.g. for raw AX3 units: 1/256)\n");
+		fprintf(stderr, "\t-rate 25|50|100|200|400|800|1600|3200    Configured sampling rate in Hz (default=100; sector-rate from data)\n");
+		fprintf(stderr, "\t-range 2|4|8|16							Accelerometer range in +/- g (default=8)\n");
+		fprintf(stderr, "\t-silent									No progress output\n");
+		fprintf(stderr, "\t-gyro none|off|125|250|500|1000|2000     none/-1=AX3 (default); off/0=AX6 accel-only mode; 125/250/500/1000/2000 degrees/second\n");
 		fprintf(stderr, "\n");
 		ret = -1;
 	}
