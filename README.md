@@ -33,17 +33,26 @@ Options:
   * `-packed` if you would like a "packed" CWA file (the default is `-unpacked`).
   * `-scale 1` can be used to change the input scaling factor (e.g. for raw AX3 units, "1/256")
   * `-range 8` can be changed to a different sensor range (2/4/8/16 _g_).
+  * `-gyro -1` creates a file produced from a device with no gyroscope (e.g. AX3), while `-gyro 0` creates a file with a disabled gyroscope, or set to a specific gyroscope range (125/250/500/1000/2000 dps).
 
 ## File format
 
-The input file format has an optional header line:
+The input file format has an optional header line of either:
 
 	Time,Accel-X (g), Accel-Y (g), Accel-Z (g)
+	
+...or...
 
-...and subsequent data lines:
+	Time,Accel-X (g), Accel-Y (g), Accel-Z (g), Gyro-X (d/s), Gyro-Y (d/s), Gyro-Z (d/s)
+
+...and subsequent data lines of either:
 
 	T,Ax,Ay,Az
+	
+...or...
 
-Where *T* is a timestamp in the format *YYYY-MM-DD hh:mm:ss.fff*, *Ax*/*Ay*/*Az* are the accelerometer axes in units of *g*.
+	T,Ax,Ay,Az,Gx,Gy,Gz
+
+Where *T* is a timestamp in the format *YYYY-MM-DD hh:mm:ss.fff*, *Ax*/*Ay*/*Az* are the accelerometer axes in units of *g*, and *Gx*/*Gy*/*Gz* are the gyroscope axes in units of degrees/second.
 
 The output file format is an Open Movement *.CWA* file, the format of which is specified at: [cwa.h](https://github.com/digitalinteraction/openmovement/blob/master/Docs/ax3/cwa.h).  
