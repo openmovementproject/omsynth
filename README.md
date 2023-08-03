@@ -67,12 +67,23 @@ The output file format is an Open Movement *.CWA* file, the format of which is s
 
 [`.CWA` files](https://github.com/digitalinteraction/openmovement/blob/master/Docs/ax3/ax3-technical.md#measurement-data) are designed to be written once by [AX Devices](https://github.com/digitalinteraction/openmovement/wiki/AX3) to be an accurate record of what was recorded -- and are not designed to be edited.  While it should be possible to export `.CWA` data to `.CSV`, edit the `.CSV` data, then synthesize a new `.CWA` file with the *omsynth* tool, this process is not lossless, and is not recommended.
 
-If you really must edit a `.CWA` file (e.g. to remove a portion of sensitive data), then the best approach would be to *splice* the original file:
+If you really must edit a `.CWA` file (e.g. to remove a portion of sensitive data), then the best approach would be to *splice* the original file.
+
+The simplest way would be to download and extract the archive [cwa-splice.zip](https://github.com/digitalinteraction/omsynth/raw/master/bin/cwa-splice.zip) and, at the command line, run the `cwa-splice.cmd` script (Windows only), which has the following usage:
+
+> ```
+> cwa-splice <input.cwa> [--output spliced.cwa] [--overwrite] [first-block last-block]...
+> ```
+
+Where the *first-block* and *last-block* numbers can be determined by pressing <kbd>Shift</kbd>+<kbd>Alt</kbd> while moving the cursor over the preview graph in the *OmGui* software.  The *last-block* can be omitted on the final segment to include the remainder of the input.
+
+
+### Manually splicing a .CWA file
+
+You can splice your own file with the Unix `dd` tool (available on Windows through [UnxUtils](https://sourceforge.net/projects/unxutils/), extract the archive, the binary is at `/usr/local/wbin/dd.exe`).  Note that:
 
 * The header is in the first 1024 bytes (0-1023 inclusive), and should be preserved.
 * Data is encapsulated in chunks of 512 bytes ("sectors"), and must only be spliced between sectors.
-
-You can splice your own file with the Unix `dd` tool (available on Windows through [UnxUtils](https://sourceforge.net/projects/unxutils/), extract the archive, the binary is at `/usr/local/wbin/dd.exe`).
 
 For example, the following commands will extract sector 10 to 20 from `cwa-data.cwa`:
 
