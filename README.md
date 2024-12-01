@@ -104,3 +104,14 @@ copy cwa-data.cwa-header /b + cwa-data.cwa-data /b cwa-data.spliced.cwa /b
 To detemine the *Block Number* to use, you can use press <kbd>Shift</kbd>+<kbd>Alt</kbd> while moving the cursor over the preview graph in the *OmGui* software.  Remember to add `2` to the skip value to account for the file header.
 
 If you want all of the remaining data after a specific offset, omit the `count=20` argument.
+
+
+### Outputting .CSV data for specific time ranges
+
+Depending on your requirements:
+
+* If exporting *Raw CSV*:  Using [OmGui](https://github.com/openmovementproject/openmovement/wiki/AX3-GUI), select a downloaded `.CWA` file in the lower *Data Files* panel.  In the middle data preview window, click the `⇼` *Selection* mode in the *Options*.  Left-click and drag to choose a selection window.  Choose *Export* / *Export Raw CSV*, and choose your exported file name.  The *Export raw data* options will now include the chosen *Selected Time Slice*.
+
+* As above, you could [splice](https://github.com/openmovementproject/omsynth/#splicing-a-cwa-file) or [manually splice](https://github.com/openmovementproject/omsynth/#manually-splicing-a-cwa-file) a `.CWA` file into parts, then [export to .CSV](https://github.com/openmovementproject/openmovement/blob/master/Docs/ax3/ax3-research.md#raw-data) each part as required.
+
+* For more advanced .CSV exporting:  You can load the raw data into one of many programming languages/analysis environments, see: [AX Research: Raw Data](https://github.com/openmovementproject/openmovement/blob/master/Docs/ax3/ax3-research.md#raw-data).
