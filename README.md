@@ -91,19 +91,22 @@ For example, the following commands will extract sector 10 to 20 from `cwa-data.
 # Extract the file header (2 sectors)
 dd bs=512 if=cwa-data.cwa of=cwa-data.cwa-header count=2
 
-# Extract the file data, at the skip offset 10 (+2 to move it after the header), and 20 count number of blocks
-dd bs=512 if=cwa-data.cwa of=cwa-data.header.cwa skip=12 count=20 of=cwa-data.cwa-data
+# Extract the file data
+# e.g. from data offset 10 (start) to 30 (end) inclusive
+#      skip=12  (start+2 to move it after the header)
+#      count=21 (end-start+1 to be an inclusive range)
+dd bs=512 if=cwa-data.cwa of=cwa-data.cwa-data skip=12 count=21
 
-# Non-Windows concatentation
+# Concatenate the header and spliced data on a non-Windows computer
 cat cwa-data.cwa-header cwa-data.cwa-data cwa-data.spliced.cwa
 
-# Windows-only concatentation
+# Concatenate the header and spliced data on a Windows computer
 copy cwa-data.cwa-header /b + cwa-data.cwa-data /b cwa-data.spliced.cwa /b
 ```
 
-To detemine the *Block Number* to use, you can use press <kbd>Shift</kbd>+<kbd>Alt</kbd> while moving the cursor over the preview graph in the *OmGui* software.  Remember to add `2` to the skip value to account for the file header.
+To detemine the *Block Number* to use, you can use press <kbd>Shift</kbd>+<kbd>Alt</kbd> while moving the cursor over the preview graph in the *OmGui* software.  Remember to add `2` to calculate the `skip` value to account for the file header, and to calculate the `count=` value by subtracting the first block number from the last block number, and add `1` to make it a range inclusive of the last block.
 
-If you want all of the remaining data after a specific offset, omit the `count=20` argument.
+If you want all of the remaining data after a specific offset, omit the `count=` argument.
 
 
 ### Outputting .CSV data for specific time ranges
