@@ -63,13 +63,22 @@ Where *T* is a timestamp in the format *YYYY-MM-DD hh:mm:ss.fff*, *Ax*/*Ay*/*Az*
 The output file format is an Open Movement *.CWA* file, the format of which is specified at: [cwa.h](https://github.com/digitalinteraction/openmovement/blob/master/Docs/ax3/cwa.h).  
 
 
+## Note: Editing .CWA files
+
+[`.CWA` files](https://github.com/digitalinteraction/openmovement/blob/master/Docs/ax3/ax3-technical.md#measurement-data) are designed to be written once by [AX Devices](https://github.com/digitalinteraction/openmovement/wiki/AX3) to be an accurate record of what was recorded -- and are not designed to be edited.  
+
+While it should be possible to export `.CWA` data to `.CSV`, edit the `.CSV` data, then synthesize a new `.CWA` file with the *omsynth* tool, this process is not lossless, and is not recommended (the *omsynth* tool was really only written to create small, synthetic sample files for testing purposes).
+
+If you really must edit a `.CWA` file (e.g. to remove a portion of sensitive data), then the best approach would be to *splice* the original file (see next section).
+
+
 ### Splicing a .CWA file
 
-[`.CWA` files](https://github.com/digitalinteraction/openmovement/blob/master/Docs/ax3/ax3-technical.md#measurement-data) are designed to be written once by [AX Devices](https://github.com/digitalinteraction/openmovement/wiki/AX3) to be an accurate record of what was recorded -- and are not designed to be edited.  While it should be possible to export `.CWA` data to `.CSV`, edit the `.CSV` data, then synthesize a new `.CWA` file with the *omsynth* tool, this process is not lossless, and is not recommended.
+The simplest way to *splice* a .CWA file (e.g. to remove a portion of sensitive data, or remove an unwanted trailing part of data) is to use `cwa-splice` (see next section) or, alternatively, the manual option described below may also be used.
 
-If you really must edit a `.CWA` file (e.g. to remove a portion of sensitive data), then the best approach would be to *splice* the original file.
+#### Splice Option 1: cwa-splice
 
-The simplest way would be to download and extract the archive [cwa-splice.zip](https://github.com/digitalinteraction/omsynth/raw/master/bin/cwa-splice.zip) and, at the command line, run the `cwa-splice.cmd` script (Windows only), which has the following usage:
+Download and extract the archive [cwa-splice.zip](https://github.com/digitalinteraction/omsynth/raw/master/bin/cwa-splice.zip) and, at the command line, run the `cwa-splice.cmd` script (Windows only), which has the following usage:
 
 > ```
 > cwa-splice <input.cwa> [--output spliced.cwa] [--overwrite] [first-block last-block]...
@@ -77,8 +86,7 @@ The simplest way would be to download and extract the archive [cwa-splice.zip](h
 
 Where the *first-block* and *last-block* numbers can be determined by pressing <kbd>Shift</kbd>+<kbd>Alt</kbd> while moving the cursor over the preview graph in the *OmGui* software.  The *last-block* can be omitted on the final segment to include the remainder of the input.
 
-
-### Manually splicing a .CWA file
+#### Splice Option 2: Manually splicing a .CWA file
 
 You can splice your own file with the Unix `dd` tool (available on Windows through [UnxUtils](https://sourceforge.net/projects/unxutils/), extract the archive, the binary is at `/usr/local/wbin/dd.exe`).  Note that:
 
@@ -109,12 +117,12 @@ To detemine the *Block Number* to use, you can use press <kbd>Shift</kbd>+<kbd>A
 If you want all of the remaining data after a specific offset, omit the `count=` argument.
 
 
-### Outputting .CSV data for specific time ranges
+## Note: Outputting .CSV data for specific time ranges
 
 Depending on your requirements:
 
 * If exporting *Raw CSV*:  Using [OmGui](https://github.com/openmovementproject/openmovement/wiki/AX3-GUI), select a downloaded `.CWA` file in the lower *Data Files* panel.  In the middle data preview window, click the `⇼` *Selection* mode in the *Options*.  Left-click and drag to choose a selection window.  Choose *Export* / *Export Raw CSV*, and choose your exported file name.  The *Export raw data* options will now include the chosen *Selected Time Slice*.
 
-* As above, you could [splice](https://github.com/openmovementproject/omsynth/#splicing-a-cwa-file) or [manually splice](https://github.com/openmovementproject/omsynth/#manually-splicing-a-cwa-file) a `.CWA` file into parts, then [export to .CSV](https://github.com/openmovementproject/openmovement/blob/master/Docs/ax3/ax3-research.md#raw-data) each part as required.
+* As above, you could [splice](https://github.com/openmovementproject/omsynth/#splicing-a-cwa-file) a `.CWA` file into parts, then [export to .CSV](https://github.com/openmovementproject/openmovement/blob/master/Docs/ax3/ax3-research.md#raw-data) each part as required.
 
 * For more advanced .CSV exporting:  You can load the raw data into one of many programming languages/analysis environments, see: [AX Research: Raw Data](https://github.com/openmovementproject/openmovement/blob/master/Docs/ax3/ax3-research.md#raw-data).
